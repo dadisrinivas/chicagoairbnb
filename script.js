@@ -63,7 +63,11 @@ function addAnnotations(svg, annotations) {
 // Scene 1: Overview of Listings by Neighborhood
 function showScene1() {
     const svg = createScene("#scene1", "Overview of Listings by Neighborhood");
-    createNavigationButtons("#scene1", null, () => showScene2(currentNeighborhood));
+    createNavigationButtons("#scene1", null, () => {
+        if (currentNeighborhood) {
+            showScene2(currentNeighborhood);
+        }
+    });
 
     d3.json("data/neighbourhoods.geojson").then(function(data) {
         const projection = d3.geoMercator().fitSize([width, height], data);
@@ -90,6 +94,7 @@ function showScene1() {
             })
             .on("click", function(event, d) {
                 currentNeighborhood = d.properties.neighbourhood;
+                console.log("Neighborhood clicked:", currentNeighborhood); // Debugging
                 showScene2(currentNeighborhood);
             });
 
@@ -101,13 +106,20 @@ function showScene1() {
             text: `Top ${i + 1}: ${d.properties.neighbourhood}`
         }));
         addAnnotations(svg, annotations);
+    }).catch(error => {
+        console.error("Error loading neighborhood data:", error); // Error handling
     });
 }
 
 // Scene 2: Listings Details in Selected Neighborhood
 function showScene2(neighbourhood) {
+    console.log("Showing Scene 2 for neighborhood:", neighbourhood); // Debugging
     const svg = createScene("#scene2", `Listings in ${neighbourhood}`);
-    createNavigationButtons("#scene2", showScene1, () => showScene3(currentListing));
+    createNavigationButtons("#scene2", showScene1, () => {
+        if (currentListing) {
+            showScene3(currentListing);
+        }
+    });
 
     d3.csv("data/listings.csv").then(function(data) {
         const filteredData = data.filter(d => d.neighbourhood === neighbourhood);
@@ -152,6 +164,7 @@ function showScene2(neighbourhood) {
             })
             .on("click", function(event, d) {
                 currentListing = d;
+                console.log("Listing clicked:", currentListing); // Debugging
                 showScene3(d);
             });
 
@@ -172,11 +185,14 @@ function showScene2(neighbourhood) {
             }
         ];
         addAnnotations(svg, annotations);
+    }).catch(error => {
+        console.error("Error loading listings data:", error); // Error handling
     });
 }
 
 // Scene 3: Listing Reviews Analysis
 function showScene3(listing) {
+    console.log("Showing Scene 3 for listing:", listing); // Debugging
     const svg = createScene("#scene3", `Reviews for ${listing.name}`);
     createNavigationButtons("#scene3", () => showScene2(currentNeighborhood), showScene5);
 
@@ -243,11 +259,14 @@ function showScene3(listing) {
             }
         ];
         addAnnotations(svg, annotations);
+    }).catch(error => {
+        console.error("Error loading reviews data:", error); // Error handling
     });
 }
 
 // Scene 5: Aggregated Insights
 function showScene5() {
+    console.log("Showing Scene 5: Aggregated Insights"); // Debugging
     const svg = createScene("#scene5", "Aggregated Insights");
     createNavigationButtons("#scene5", showScene3, null);
 
@@ -321,6 +340,8 @@ function showScene5() {
             }
         ];
         addAnnotations(svg, annotations);
+    }).catch(error => {
+        console.error("Error loading listings data:", error); // Error handling
     });
 }
 
