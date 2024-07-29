@@ -5,7 +5,6 @@ const margin = { top: 10, right: 30, bottom: 60, left: 60 };
 
 // Parameters: State variables to control the construction of scenes
 let currentNeighborhood = "";
-let currentListing = {};
 
 // Scene templates for visual consistency
 function createScene(id, title) {
@@ -52,7 +51,6 @@ function showScene1() {
     console.log("Showing Scene 1");
     d3.select("#scene1").style("display", "block");
     d3.select("#scene2").style("display", "none");
-    d3.select("#scene3").style("display", "none");
     d3.select("#scene5").style("display", "none");
 
     const svg = createScene("#scene1", "Overview of Listings by Neighborhood");
@@ -95,11 +93,10 @@ function showScene2(neighbourhood) {
     console.log("Showing Scene 2 for neighborhood:", neighbourhood);
     d3.select("#scene1").style("display", "none");
     d3.select("#scene2").style("display", "block");
-    d3.select("#scene3").style("display", "none");
     d3.select("#scene5").style("display", "none");
 
     const svg = createScene("#scene2", `Listings in ${neighbourhood}`);
-    createNavigationButtons("#scene2", showScene1, () => showScene3(currentListing));
+    createNavigationButtons("#scene2", showScene1, showScene5);
 
     d3.csv("data/listings.csv").then(function(data) {
         const filteredData = data.filter(d => d.neighbourhood === neighbourhood);
@@ -135,11 +132,6 @@ function showScene2(neighbourhood) {
             })
             .on("mouseout", function() {
                 d3.select(".tooltip").remove();
-            })
-            .on("click", function(event, d) {
-                currentListing = d;
-                console.log("Listing clicked:", currentListing);
-                showScene3(d);
             });
 
         // Add labels
@@ -160,114 +152,15 @@ function showScene2(neighbourhood) {
     });
 }
 
-// Scene 3: Listing Reviews Analysis (Line Chart of Reviews over Time)
-function showScene3(listing) {
-    console.log("Showing Scene 3 for listing:", listing);
-    d3.select("#scene1").style("display", "none");
-    d3.select("#scene2").style("display", "none");
-    d3.select("#scene3").style("display", "block");
-    d3.select("#scene5").style("display", "none");
-
-    const svg = createScene("#scene3", `Review Activity for ${listing.name}`);
-    createNavigationButtons("#scene3", () => showScene2(currentNeighborhood), showScene5);
-
-    d3.csv("data/reviews.csv").then(function(data) {
-        const filteredData = data.filter(d => d.listing_id === listing.id);
-
-        if (filteredData.length === 0) {
-            svg.append("text")
-                .attr("x", width / 2)
-                .attr("y", height / 2)
-                .attr("text-anchor", "middle")
-                .text("No data available for this listing.");
-            return;
-        }
-
-        // Parse dates and group by month
-        const dateParser = d3.timeParse("%Y-%m-%d");
-        const reviewsByMonth = d3.rollups(
-            filteredData,
-            v => v.length,
-            d => d3.timeMonth(dateParser(d.date))
-        );
-
-        const x = d3.scaleTime()
-            .domain(d3.extent(reviewsByMonth, d => d[0]))
-            .range([0, width]);
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(reviewsByMonth, d => d[1])])
-            .range([height, 0]);
-
-        svg.append("g")
-            .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%b %Y")).ticks(d3.timeMonth.every(1)))
-            .selectAll("text")
-            .attr("transform", "rotate(-45)")
-            .style("text-anchor", "end");
-
-        svg.append("g")
-            .call(d3.axisLeft(y));
-
-        const line = d3.line()
-            .x(d => x(d[0]))
-            .y(d => y(d[1]))
-            .curve(d3.curveMonotoneX);
-
-        svg.append("path")
-            .datum(reviewsByMonth)
-            .attr("fill", "none")
-            .attr("stroke", "steelblue")
-            .attr("stroke-width", 2)
-            .attr("d", line);
-
-        svg.selectAll(".dot")
-            .data(reviewsByMonth)
-            .enter()
-            .append("circle")
-            .attr("class", "dot")
-            .attr("cx", d => x(d[0]))
-            .attr("cy", d => y(d[1]))
-            .attr("r", 5)
-            .attr("fill", "steelblue")
-            .on("mouseover", function(event, d) {
-                const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-                tooltip.html(`Month: ${d3.timeFormat("%b %Y")(d[0])}<br>Reviews: ${d[1]}`)
-                    .style("left", (event.pageX + 5) + "px")
-                    .style("top", (event.pageY - 28) + "px")
-                    .style("opacity", 0.9);
-            })
-            .on("mouseout", function() {
-                d3.select(".tooltip").remove();
-            });
-
-        // Add labels
-        svg.append("text")
-            .attr("x", width / 2)
-            .attr("y", height + margin.bottom - 35)
-            .attr("text-anchor", "middle")
-            .text("Month");
-
-        svg.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("x", -height / 2)
-            .attr("y", -margin.left + 15)
-            .attr("text-anchor", "middle")
-            .text("Number of Reviews");
-    }).catch(error => {
-        console.error("Error loading reviews data:", error);
-    });
-}
-
 // Scene 5: Aggregated Insights (Bar Chart)
 function showScene5() {
     console.log("Showing Scene 5: Aggregated Insights");
     d3.select("#scene1").style("display", "none");
     d3.select("#scene2").style("display", "none");
-    d3.select("#scene3").style("display", "none");
     d3.select("#scene5").style("display", "block");
 
     const svg = createScene("#scene5", "Aggregated Insights");
-    createNavigationButtons("#scene5", showScene3, null);
+    createNavigationButtons("#scene5", showScene2, null);
 
     d3.csv("data/listings.csv").then(function(data) {
         // Calculate aggregated insights
