@@ -2,28 +2,18 @@ body {
     font-family: Arial, sans-serif;
 }
 
-.tooltip {
-    position: absolute;
-    text-align: center;
-    width: 100px;
-    height: auto;
-    padding: 5px;
-    background: lightsteelblue;
-    border: 1px solid gray;
-    border-radius: 5px;
-    pointer-events: none;
-    font-size: 10px; /* Smaller font size */
-}
-
-#scene1, #scene2, #scene3, #scene5 {
-    margin: 20px;
-}
-
 .title {
     font-size: 24px;
     font-weight: bold;
     text-align: center;
     margin-bottom: 10px;
+}
+
+.svg-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
 }
 
 .button-container {
@@ -43,4 +33,22 @@ body {
     margin: 4px 2px;
     cursor: pointer;
     border-radius: 8px;
+}
+
+.annotation {
+    font-size: 12px;
+    fill: red;
+}
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 100px;
+    height: auto;
+    padding: 5px;
+    background: lightsteelblue;
+    border: 1px solid gray;
+    border-radius: 5px;
+    pointer-events: none;
+    font-size: 10px; /* Smaller font size */
 }

@@ -1,6 +1,7 @@
 // Set dimensions and margins for the visualizations
 const width = 960;
 const height = 600;
+const margin = { top: 10, right: 30, bottom: 30, left: 60 };
 
 // Parameters: State variables to control the construction of scenes
 let currentNeighborhood = "";
@@ -15,9 +16,14 @@ function createScene(id, title) {
         .attr("class", "title")
         .text(title);
 
-    const svg = container.append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    const svgContainer = container.append("div")
+        .attr("class", "svg-container");
+
+    const svg = svgContainer.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
     return svg;
 }
@@ -106,32 +112,25 @@ function showScene2(neighbourhood) {
     d3.csv("data/listings.csv").then(function(data) {
         const filteredData = data.filter(d => d.neighbourhood === neighbourhood);
 
-        const margin = { top: 10, right: 30, bottom: 30, left: 60 };
-        const innerWidth = width - margin.left - margin.right;
-        const innerHeight = height - margin.top - margin.bottom;
-
         const x = d3.scaleBand()
             .domain(filteredData.map(d => d.name))
-            .range([0, innerWidth])
+            .range([0, width])
             .padding(0.1);
         const y = d3.scaleLinear()
             .domain([0, d3.max(filteredData, d => +d.price)])
-            .range([innerHeight, 0]);
+            .range([height, 0]);
 
-        const g = svg.append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
-
-        g.append("g")
-            .attr("transform", `translate(0,${innerHeight})`)
+        svg.append("g")
+            .attr("transform", `translate(0,${height})`)
             .call(d3.axisBottom(x))
             .selectAll("text")
             .attr("transform", "rotate(-45)")
             .style("text-anchor", "end");
 
-        g.append("g")
+        svg.append("g")
             .call(d3.axisLeft(y));
 
-        g.selectAll(".bar")
+        svg.selectAll(".bar")
             .data(filteredData)
             .enter()
             .append("rect")
@@ -139,7 +138,7 @@ function showScene2(neighbourhood) {
             .attr("x", d => x(d.name))
             .attr("y", d => y(d.price))
             .attr("width", x.bandwidth())
-            .attr("height", d => innerHeight - y(d.price))
+            .attr("height", d => height - y(d.price))
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
@@ -172,7 +171,7 @@ function showScene2(neighbourhood) {
                 text: `Max Reviews: ${maxReviewsListing.reviews_per_month}`
             }
         ];
-        addAnnotations(g, annotations);
+        addAnnotations(svg, annotations);
     });
 }
 
@@ -184,39 +183,31 @@ function showScene3(listing) {
     d3.csv("data/reviews.csv").then(function(data) {
         const filteredData = data.filter(d => d.listing_id === listing.id);
 
-        const margin = { top: 10, right: 30, bottom: 30, left: 60 };
-        const innerWidth = width - margin.left - margin.right;
-        const innerHeight = height - margin.top - margin.bottom;
-
         const x = d3.scaleTime()
             .domain(d3.extent(filteredData, d => new Date(d.date)))
-            .range([0, innerWidth]);
+            .range([0, width]);
         const y = d3.scaleLinear()
             .domain([0, d3.max(filteredData, d => d.rating)]) // Assuming rating scale is 0-5
-            .range([innerHeight, 0]);
+            .range([height, 0]);
 
-        const g = svg.append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
-
-        g.append("g")
-            .attr("transform", `translate(0,${innerHeight})`)
+        svg.append("g")
+            .attr("transform", `translate(0,${height})`)
             .call(d3.axisBottom(x));
 
-        g.append("g")
+        svg.append("g")
             .call(d3.axisLeft(y));
 
-        const line = d3.line()
+        const area = d3.area()
             .x(d => x(new Date(d.date)))
-            .y(d => y(d.rating));
+            .y0(height)
+            .y1(d => y(d.rating));
 
-        g.append("path")
+        svg.append("path")
             .datum(filteredData)
-            .attr("fill", "none")
-            .attr("stroke", "steelblue")
-            .attr("stroke-width", 1.5)
-            .attr("d", line);
+            .attr("fill", "steelblue")
+            .attr("d", area);
 
-        g.selectAll("circle")
+        svg.selectAll("circle")
             .data(filteredData)
             .enter()
             .append("circle")
@@ -251,7 +242,7 @@ function showScene3(listing) {
                 text: `Min Rating: ${minRating}`
             }
         ];
-        addAnnotations(g, annotations);
+        addAnnotations(svg, annotations);
     });
 }
 
@@ -274,32 +265,25 @@ function showScene5() {
             };
         });
 
-        const margin = { top: 10, right: 30, bottom: 30, left: 60 };
-        const innerWidth = width - margin.left - margin.right;
-        const innerHeight = height - margin.top - margin.bottom;
-
         const x = d3.scaleBand()
             .domain(insights.map(d => d.neighbourhood))
-            .range([0, innerWidth])
+            .range([0, width])
             .padding(0.1);
         const y = d3.scaleLinear()
             .domain([0, d3.max(insights, d => d.avgPrice)])
-            .range([innerHeight, 0]);
+            .range([height, 0]);
 
-        const g = svg.append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
-
-        g.append("g")
-            .attr("transform", `translate(0,${innerHeight})`)
+        svg.append("g")
+            .attr("transform", `translate(0,${height})`)
             .call(d3.axisBottom(x))
             .selectAll("text")
             .attr("transform", "rotate(-45)")
             .style("text-anchor", "end");
 
-        g.append("g")
+        svg.append("g")
             .call(d3.axisLeft(y));
 
-        g.selectAll(".bar")
+        svg.selectAll(".bar")
             .data(insights)
             .enter()
             .append("rect")
@@ -307,7 +291,7 @@ function showScene5() {
             .attr("x", d => x(d.neighbourhood))
             .attr("y", d => y(d.avgPrice))
             .attr("width", x.bandwidth())
-            .attr("height", d => innerHeight - y(d.avgPrice))
+            .attr("height", d => height - y(d.avgPrice))
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
@@ -336,7 +320,7 @@ function showScene5() {
                 text: `Highest Avg Reviews: ${topReviewsNeighborhood.avgReviewsPerMonth.toFixed(2)}`
             }
         ];
-        addAnnotations(g, annotations);
+        addAnnotations(svg, annotations);
     });
 }
 
