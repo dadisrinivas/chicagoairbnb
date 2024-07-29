@@ -223,16 +223,15 @@ function showScene5() {
             .attr("x", width / 2)
             .attr("y", height + margin.bottom - 5)
             .attr("text-anchor", "middle")
-            .text("Neighbourhood");
+            .text("");
 
         svg.append("text")
             .attr("transform", "rotate(-90)")
             .attr("x", -height / 2)
             .attr("y", -margin.left + 15)
             .attr("text-anchor", "middle")
-            .text("Avg Price");
+            .text("Avg Price in $$");
 
-        // Move back button down a little
         d3.select("#scene5 .button-container")
             .style("margin-top", "50px");
     }).catch(error => {
