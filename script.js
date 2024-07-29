@@ -1,7 +1,7 @@
 // Set dimensions and margins for the visualizations
 const width = 960;
 const height = 600;
-const margin = { top: 10, right: 30, bottom: 80, left: 60 };  // Increased bottom margin for x-axis label
+const margin = { top: 10, right: 30, bottom: 80, left: 60 };
 
 // Parameters: State variables to control the construction of scenes
 let currentNeighborhood = "";
@@ -83,6 +83,17 @@ function showScene1() {
                 console.log("Neighborhood clicked:", currentNeighborhood);
                 showScene2(currentNeighborhood);
             });
+
+        // Add annotations
+        const annotation = svg.append("g")
+            .attr("class", "annotation")
+            .attr("transform", `translate(${width - 10},${height - 10})`);
+
+        annotation.append("text")
+            .attr("x", -10)
+            .attr("y", -10)
+            .attr("text-anchor", "end")
+            .text("Click a neighborhood to explore listings");
     }).catch(error => {
         console.error("Error loading neighborhood data:", error);
     });
@@ -96,7 +107,7 @@ function showScene2(neighbourhood) {
     d3.select("#scene5").style("display", "none");
 
     const svg = createScene("#scene2", `Listings in ${neighbourhood}`);
-    createNavigationButtons("#scene2", () => showScene1(), showScene5);
+    createNavigationButtons("#scene2", showScene1, showScene5);
 
     d3.csv("data/listings.csv").then(function(data) {
         const filteredData = data.filter(d => d.neighbourhood === neighbourhood);
@@ -133,6 +144,24 @@ function showScene2(neighbourhood) {
             .on("mouseout", function() {
                 d3.select(".tooltip").remove();
             });
+
+        // Add annotations
+        const annotation = svg.append("g")
+            .attr("class", "annotation")
+            .attr("transform", `translate(${x(d3.max(filteredData, d => +d.price))},${y(5)})`);
+
+        annotation.append("text")
+            .attr("x", -10)
+            .attr("y", -10)
+            .attr("text-anchor", "end")
+            .text("Max Price");
+
+        annotation.append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 10)
+            .attr("y2", 10)
+            .attr("stroke", "black");
 
         // Add labels
         svg.append("text")
@@ -218,6 +247,24 @@ function showScene5() {
                 d3.select(".tooltip").remove();
             });
 
+        // Add annotations
+        const annotation = svg.append("g")
+            .attr("class", "annotation")
+            .attr("transform", `translate(${x(insights[0].neighbourhood) + x.bandwidth() / 2},${y(insights[0].avgPrice)})`);
+
+        annotation.append("text")
+            .attr("x", -10)
+            .attr("y", -10)
+            .attr("text-anchor", "end")
+            .text("Highest Avg Price");
+
+        annotation.append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 10)
+            .attr("y2", 10)
+            .attr("stroke", "black");
+
         // Add labels
         svg.append("text")
             .attr("x", width / 2)
@@ -230,8 +277,9 @@ function showScene5() {
             .attr("x", -height / 2)
             .attr("y", -margin.left + 15)
             .attr("text-anchor", "middle")
-            .text("Avg Price in $$");
+            .text("Avg Price($$)");
 
+        // Move back button down a little
         d3.select("#scene5 .button-container")
             .style("margin-top", "50px");
     }).catch(error => {
