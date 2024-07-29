@@ -172,17 +172,28 @@ function showScene3(listing) {
         svg.append("g")
             .call(d3.axisLeft(y));
 
+        const line = d3.line()
+            .x(d => x(new Date(d.date)))
+            .y(d => y(d.rating));
+
+        svg.append("path")
+            .datum(filteredData)
+            .attr("fill", "none")
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", 1.5)
+            .attr("d", line);
+
         svg.selectAll("circle")
             .data(filteredData)
             .enter()
             .append("circle")
             .attr("cx", d => x(new Date(d.date)))
-            .attr("cy", d => y(5)) // Assuming a placeholder rating value
+            .attr("cy", d => y(d.rating))
             .attr("r", 5)
             .attr("fill", "green")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-                tooltip.html(`Date: ${d.date}`)
+                tooltip.html(`Date: ${d.date}<br>Rating: ${d.rating}`)
                     .style("left", (event.pageX + 5) + "px")
                     .style("top", (event.pageY - 28) + "px")
                     .style("opacity", 0.9);
@@ -204,16 +215,68 @@ function showScene5() {
     d3.select("#scene3").style("display", "none");
     d3.select("#scene5").style("display", "block");
 
-    const svg = d3.select("#scene5").append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    d3.csv("data/listings.csv").then(function(data) {
+        // Calculate aggregated insights
+        const groupedData = d3.groups(data, d => d.neighbourhood);
 
-    // This is a placeholder for aggregated insights
-    svg.append("text")
-        .attr("x", width / 2)
-        .attr("y", height / 2)
-        .attr("text-anchor", "middle")
-        .text("Aggregated Insights Coming Soon!");
+        const insights = groupedData.map(([neighbourhood, listings]) => {
+            const avgPrice = d3.mean(listings, d => +d.price);
+            const avgReviewsPerMonth = d3.mean(listings, d => +d.reviews_per_month);
+            return {
+                neighbourhood,
+                avgPrice,
+                avgReviewsPerMonth
+            };
+        });
+
+        const margin = {top: 10, right: 30, bottom: 30, left: 60};
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+
+        const svg = d3.select("#scene5").append("svg")
+            .attr("width", innerWidth + margin.left + margin.right)
+            .attr("height", innerHeight + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const x = d3.scaleBand()
+            .domain(insights.map(d => d.neighbourhood))
+            .range([0, innerWidth])
+            .padding(0.1);
+        svg.append("g")
+            .attr("transform", `translate(0,${innerHeight})`)
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end");
+
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(insights, d => d.avgPrice)])
+            .range([innerHeight, 0]);
+        svg.append("g")
+            .call(d3.axisLeft(y));
+
+        svg.selectAll(".bar")
+            .data(insights)
+            .enter()
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", d => x(d.neighbourhood))
+            .attr("y", d => y(d.avgPrice))
+            .attr("width", x.bandwidth())
+            .attr("height", d => innerHeight - y(d.avgPrice))
+            .attr("fill", "steelblue")
+            .on("mouseover", function(event, d) {
+                const tooltip = d3.select("body").append("div").attr("class", "tooltip");
+                tooltip.html(`Neighbourhood: ${d.neighbourhood}<br>Avg Price: $${d.avgPrice.toFixed(2)}<br>Avg Reviews/Month: ${d.avgReviewsPerMonth.toFixed(2)}`)
+                    .style("left", (event.pageX + 5) + "px")
+                    .style("top", (event.pageY - 28) + "px")
+                    .style("opacity", 0.9);
+            })
+            .on("mouseout", function() {
+                d3.select(".tooltip").remove();
+            });
+    });
 }
 
 // Global variables to keep track of the current neighborhood and listing
