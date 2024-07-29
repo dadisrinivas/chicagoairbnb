@@ -1,7 +1,7 @@
 // Set dimensions and margins for the visualizations
 const width = 960;
 const height = 600;
-const margin = { top: 10, right: 30, bottom: 60, left: 60 };
+const margin = { top: 10, right: 30, bottom: 80, left: 60 };  // Increased bottom margin for x-axis label
 
 // Parameters: State variables to control the construction of scenes
 let currentNeighborhood = "";
@@ -221,7 +221,7 @@ function showScene5() {
         // Add labels
         svg.append("text")
             .attr("x", width / 2)
-            .attr("y", height + margin.bottom - 35)
+            .attr("y", height + margin.bottom - 5)
             .attr("text-anchor", "middle")
             .text("Neighbourhood");
 
@@ -234,7 +234,7 @@ function showScene5() {
 
         // Move back button down a little
         d3.select("#scene5 .button-container")
-            .style("margin-top", "20px");
+            .style("margin-top", "50px");
     }).catch(error => {
         console.error("Error loading listings data:", error);
     });
