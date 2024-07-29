@@ -246,7 +246,7 @@ function showScene3(listing) {
     });
 }
 
-// Scene 5: Aggregated Insights (Curved Line Graph)
+// Scene 5: Aggregated Insights (Bar Chart)
 function showScene5() {
     console.log("Showing Scene 5: Aggregated Insights");
     d3.select("#scene1").style("display", "none");
@@ -271,6 +271,9 @@ function showScene5() {
             };
         });
 
+        // Sort data by average price
+        insights.sort((a, b) => b.avgPrice - a.avgPrice);
+
         const x = d3.scaleBand()
             .domain(insights.map(d => d.neighbourhood))
             .range([0, width])
@@ -289,26 +292,15 @@ function showScene5() {
         svg.append("g")
             .call(d3.axisLeft(y));
 
-        const line = d3.line()
-            .x(d => x(d.neighbourhood) + x.bandwidth() / 2)
-            .y(d => y(d.avgPrice))
-            .curve(d3.curveCardinal);
-
-        svg.append("path")
-            .datum(insights)
-            .attr("fill", "none")
-            .attr("stroke", "steelblue")
-            .attr("stroke-width", 2)
-            .attr("d", line);
-
-        svg.selectAll(".dot")
+        svg.selectAll(".bar")
             .data(insights)
             .enter()
-            .append("circle")
-            .attr("class", "dot")
-            .attr("cx", d => x(d.neighbourhood) + x.bandwidth() / 2)
-            .attr("cy", d => y(d.avgPrice))
-            .attr("r", 5)
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", d => x(d.neighbourhood))
+            .attr("y", d => y(d.avgPrice))
+            .attr("width", x.bandwidth())
+            .attr("height", d => height - y(d.avgPrice))
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
