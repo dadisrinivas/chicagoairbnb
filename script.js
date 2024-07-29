@@ -1,7 +1,7 @@
 // Set dimensions and margins for the visualizations
 const width = 960;
 const height = 600;
-const margin = { top: 10, right: 30, bottom: 30, left: 60 };
+const margin = { top: 10, right: 30, bottom: 60, left: 60 };
 
 // Parameters: State variables to control the construction of scenes
 let currentNeighborhood = "";
@@ -174,11 +174,20 @@ function showScene3(listing) {
     d3.csv("data/reviews.csv").then(function(data) {
         const filteredData = data.filter(d => d.listing_id === listing.id);
 
+        if (filteredData.length === 0) {
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height / 2)
+                .attr("text-anchor", "middle")
+                .text("No data available for this listing.");
+            return;
+        }
+
         // Calculate average rating by date
         const dateParser = d3.timeParse("%Y-%m-%d");
         const avgRatingByDate = d3.rollups(
             filteredData,
-            v => d3.mean(v, d => d.rating),
+            v => d3.mean(v, d => +d.rating),
             d => dateParser(d.date)
         );
 
