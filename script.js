@@ -2,8 +2,44 @@
 const width = 960;
 const height = 600;
 
+// Add title and buttons for navigation
+function addTitleAndButtons(scene, title) {
+    const container = d3.select(scene);
+    container.html("");
+
+    container.append("div")
+        .attr("class", "title")
+        .text(title);
+
+    const buttonContainer = container.append("div")
+        .attr("class", "button-container");
+
+    if (scene !== "#scene1") {
+        buttonContainer.append("button")
+            .attr("class", "button")
+            .text("Back")
+            .on("click", () => {
+                if (scene === "#scene2") showScene1();
+                else if (scene === "#scene3") showScene2(currentNeighborhood);
+                else if (scene === "#scene5") showScene3(currentListing);
+            });
+    }
+
+    if (scene !== "#scene5") {
+        buttonContainer.append("button")
+            .attr("class", "button")
+            .text("Next")
+            .on("click", () => {
+                if (scene === "#scene1") showScene2(currentNeighborhood);
+                else if (scene === "#scene2") showScene3(currentListing);
+                else if (scene === "#scene3") showScene5();
+            });
+    }
+}
+
 // Scene 1: Overview of Listings by Neighborhood
 function showScene1() {
+    addTitleAndButtons("#scene1", "Overview of Listings by Neighborhood");
     d3.select("#scene1").style("display", "block");
     d3.select("#scene2").style("display", "none");
     d3.select("#scene3").style("display", "none");
@@ -37,13 +73,15 @@ function showScene1() {
                 d3.select(".tooltip").remove();
             })
             .on("click", function(event, d) {
-                showScene2(d.properties.neighbourhood);
+                currentNeighborhood = d.properties.neighbourhood;
+                showScene2(currentNeighborhood);
             });
     });
 }
 
 // Scene 2: Listings Details in Selected Neighborhood
 function showScene2(neighbourhood) {
+    addTitleAndButtons("#scene2", `Listings in ${neighbourhood}`);
     d3.select("#scene1").style("display", "none");
     d3.select("#scene2").style("display", "block");
     d3.select("#scene3").style("display", "none");
@@ -94,6 +132,7 @@ function showScene2(neighbourhood) {
                 d3.select(".tooltip").remove();
             })
             .on("click", function(event, d) {
+                currentListing = d;
                 showScene3(d);
             });
     });
@@ -101,6 +140,7 @@ function showScene2(neighbourhood) {
 
 // Scene 3: Listing Reviews Analysis
 function showScene3(listing) {
+    addTitleAndButtons("#scene3", `Reviews for ${listing.name}`);
     d3.select("#scene1").style("display", "none");
     d3.select("#scene2").style("display", "none");
     d3.select("#scene3").style("display", "block");
@@ -158,6 +198,7 @@ function showScene3(listing) {
 
 // Scene 5: Aggregated Insights
 function showScene5() {
+    addTitleAndButtons("#scene5", "Aggregated Insights");
     d3.select("#scene1").style("display", "none");
     d3.select("#scene2").style("display", "none");
     d3.select("#scene3").style("display", "none");
@@ -174,6 +215,10 @@ function showScene5() {
         .attr("text-anchor", "middle")
         .text("Aggregated Insights Coming Soon!");
 }
+
+// Global variables to keep track of the current neighborhood and listing
+let currentNeighborhood = "";
+let currentListing = {};
 
 // Start with Scene 1
 showScene1();

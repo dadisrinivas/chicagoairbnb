@@ -12,8 +12,35 @@ body {
     border: 1px solid gray;
     border-radius: 5px;
     pointer-events: none;
+    font-size: 10px; /* Smaller font size */
 }
 
 #scene1, #scene2, #scene3, #scene5 {
     margin: 20px;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.button-container {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.button {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
 }
