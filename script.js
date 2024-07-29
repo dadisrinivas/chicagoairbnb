@@ -2,52 +2,62 @@
 const width = 960;
 const height = 600;
 
-// Add title and buttons for navigation
-function addTitleAndButtons(scene, title) {
-    const container = d3.select(scene);
-    container.html("");
+// Parameters: State variables to control the construction of scenes
+let currentNeighborhood = "";
+let currentListing = {};
+
+// Scene templates for visual consistency
+function createScene(id, title) {
+    const container = d3.select(id);
+    container.html(""); // Clear the container
 
     container.append("div")
         .attr("class", "title")
         .text(title);
 
-    const buttonContainer = container.append("div")
+    const svg = container.append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    return svg;
+}
+
+function createNavigationButtons(sceneId, backAction, nextAction) {
+    const buttonContainer = d3.select(sceneId).append("div")
         .attr("class", "button-container");
 
-    if (scene !== "#scene1") {
+    if (backAction) {
         buttonContainer.append("button")
             .attr("class", "button")
             .text("Back")
-            .on("click", () => {
-                if (scene === "#scene2") showScene1();
-                else if (scene === "#scene3") showScene2(currentNeighborhood);
-                else if (scene === "#scene5") showScene3(currentListing);
-            });
+            .on("click", backAction);
     }
 
-    if (scene !== "#scene5") {
+    if (nextAction) {
         buttonContainer.append("button")
             .attr("class", "button")
             .text("Next")
-            .on("click", () => {
-                if (scene === "#scene1") showScene2(currentNeighborhood);
-                else if (scene === "#scene2") showScene3(currentListing);
-                else if (scene === "#scene3") showScene5();
-            });
+            .on("click", nextAction);
     }
+}
+
+// Annotations template for visual consistency
+function addAnnotations(svg, annotations) {
+    annotations.forEach(ann => {
+        svg.append("text")
+            .attr("x", ann.x)
+            .attr("y", ann.y)
+            .attr("dy", ann.dy || -10)
+            .attr("dx", ann.dx || -10)
+            .attr("class", "annotation")
+            .text(ann.text);
+    });
 }
 
 // Scene 1: Overview of Listings by Neighborhood
 function showScene1() {
-    addTitleAndButtons("#scene1", "Overview of Listings by Neighborhood");
-    d3.select("#scene1").style("display", "block");
-    d3.select("#scene2").style("display", "none");
-    d3.select("#scene3").style("display", "none");
-    d3.select("#scene5").style("display", "none");
-
-    const svg = d3.select("#scene1").append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    const svg = createScene("#scene1", "Overview of Listings by Neighborhood");
+    createNavigationButtons("#scene1", null, () => showScene2(currentNeighborhood));
 
     d3.json("data/neighbourhoods.geojson").then(function(data) {
         const projection = d3.geoMercator().fitSize([width, height], data);
@@ -76,51 +86,61 @@ function showScene1() {
                 currentNeighborhood = d.properties.neighbourhood;
                 showScene2(currentNeighborhood);
             });
+
+        // Add annotations
+        const topNeighborhoods = data.features.slice(0, 3);
+        const annotations = topNeighborhoods.map((d, i) => ({
+            x: projection(d.geometry.coordinates[0][0][0])[0],
+            y: projection(d.geometry.coordinates[0][0][0])[1],
+            text: `Top ${i + 1}: ${d.properties.neighbourhood}`
+        }));
+        addAnnotations(svg, annotations);
     });
 }
 
 // Scene 2: Listings Details in Selected Neighborhood
 function showScene2(neighbourhood) {
-    addTitleAndButtons("#scene2", `Listings in ${neighbourhood}`);
-    d3.select("#scene1").style("display", "none");
-    d3.select("#scene2").style("display", "block");
-    d3.select("#scene3").style("display", "none");
-    d3.select("#scene5").style("display", "none");
+    const svg = createScene("#scene2", `Listings in ${neighbourhood}`);
+    createNavigationButtons("#scene2", showScene1, () => showScene3(currentListing));
 
     d3.csv("data/listings.csv").then(function(data) {
         const filteredData = data.filter(d => d.neighbourhood === neighbourhood);
 
-        const margin = {top: 10, right: 30, bottom: 30, left: 60};
+        const margin = { top: 10, right: 30, bottom: 30, left: 60 };
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
 
-        const svg = d3.select("#scene2").append("svg")
-            .attr("width", innerWidth + margin.left + margin.right)
-            .attr("height", innerHeight + margin.top + margin.bottom)
-            .append("g")
+        const x = d3.scaleBand()
+            .domain(filteredData.map(d => d.name))
+            .range([0, innerWidth])
+            .padding(0.1);
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(filteredData, d => +d.price)])
+            .range([innerHeight, 0]);
+
+        const g = svg.append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        const x = d3.scaleLinear()
-            .domain([0, d3.max(filteredData, d => +d.price)])
-            .range([0, innerWidth]);
-        svg.append("g")
+        g.append("g")
             .attr("transform", `translate(0,${innerHeight})`)
-            .call(d3.axisBottom(x));
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end");
 
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(filteredData, d => +d.reviews_per_month)])
-            .range([innerHeight, 0]);
-        svg.append("g")
+        g.append("g")
             .call(d3.axisLeft(y));
 
-        svg.selectAll("circle")
+        g.selectAll(".bar")
             .data(filteredData)
             .enter()
-            .append("circle")
-            .attr("cx", d => x(d.price))
-            .attr("cy", d => y(d.reviews_per_month))
-            .attr("r", 5)
-            .attr("fill", "blue")
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", d => x(d.name))
+            .attr("y", d => y(d.price))
+            .attr("width", x.bandwidth())
+            .attr("height", d => innerHeight - y(d.price))
+            .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
                 tooltip.html(`Name: ${d.name}<br>Price: $${d.price}<br>Reviews/Month: ${d.reviews_per_month}`)
@@ -135,55 +155,68 @@ function showScene2(neighbourhood) {
                 currentListing = d;
                 showScene3(d);
             });
+
+        // Add annotations
+        const maxPriceListing = filteredData.reduce((prev, current) => (prev.price > current.price) ? prev : current);
+        const maxReviewsListing = filteredData.reduce((prev, current) => (prev.reviews_per_month > current.reviews_per_month) ? prev : current);
+
+        const annotations = [
+            {
+                x: x(maxPriceListing.name),
+                y: y(maxPriceListing.price),
+                text: `Max Price: $${maxPriceListing.price}`
+            },
+            {
+                x: x(maxReviewsListing.name),
+                y: y(maxReviewsListing.price),
+                text: `Max Reviews: ${maxReviewsListing.reviews_per_month}`
+            }
+        ];
+        addAnnotations(g, annotations);
     });
 }
 
 // Scene 3: Listing Reviews Analysis
 function showScene3(listing) {
-    addTitleAndButtons("#scene3", `Reviews for ${listing.name}`);
-    d3.select("#scene1").style("display", "none");
-    d3.select("#scene2").style("display", "none");
-    d3.select("#scene3").style("display", "block");
-    d3.select("#scene5").style("display", "none");
+    const svg = createScene("#scene3", `Reviews for ${listing.name}`);
+    createNavigationButtons("#scene3", () => showScene2(currentNeighborhood), showScene5);
 
     d3.csv("data/reviews.csv").then(function(data) {
         const filteredData = data.filter(d => d.listing_id === listing.id);
 
-        const margin = {top: 10, right: 30, bottom: 30, left: 60};
+        const margin = { top: 10, right: 30, bottom: 30, left: 60 };
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
-
-        const svg = d3.select("#scene3").append("svg")
-            .attr("width", innerWidth + margin.left + margin.right)
-            .attr("height", innerHeight + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
 
         const x = d3.scaleTime()
             .domain(d3.extent(filteredData, d => new Date(d.date)))
             .range([0, innerWidth]);
-        svg.append("g")
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(filteredData, d => d.rating)]) // Assuming rating scale is 0-5
+            .range([innerHeight, 0]);
+
+        const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        g.append("g")
             .attr("transform", `translate(0,${innerHeight})`)
             .call(d3.axisBottom(x));
 
-        const y = d3.scaleLinear()
-            .domain([0, 5]) // Assuming rating scale is 0-5
-            .range([innerHeight, 0]);
-        svg.append("g")
+        g.append("g")
             .call(d3.axisLeft(y));
 
         const line = d3.line()
             .x(d => x(new Date(d.date)))
             .y(d => y(d.rating));
 
-        svg.append("path")
+        g.append("path")
             .datum(filteredData)
             .attr("fill", "none")
             .attr("stroke", "steelblue")
             .attr("stroke-width", 1.5)
             .attr("d", line);
 
-        svg.selectAll("circle")
+        g.selectAll("circle")
             .data(filteredData)
             .enter()
             .append("circle")
@@ -200,20 +233,32 @@ function showScene3(listing) {
             })
             .on("mouseout", function() {
                 d3.select(".tooltip").remove();
-            })
-            .on("click", function() {
-                showScene5();
             });
+
+        // Add annotations
+        const maxRating = d3.max(filteredData, d => d.rating);
+        const minRating = d3.min(filteredData, d => d.rating);
+
+        const annotations = [
+            {
+                x: x(new Date(filteredData.find(d => d.rating === maxRating).date)),
+                y: y(maxRating),
+                text: `Max Rating: ${maxRating}`
+            },
+            {
+                x: x(new Date(filteredData.find(d => d.rating === minRating).date)),
+                y: y(minRating),
+                text: `Min Rating: ${minRating}`
+            }
+        ];
+        addAnnotations(g, annotations);
     });
 }
 
 // Scene 5: Aggregated Insights
 function showScene5() {
-    addTitleAndButtons("#scene5", "Aggregated Insights");
-    d3.select("#scene1").style("display", "none");
-    d3.select("#scene2").style("display", "none");
-    d3.select("#scene3").style("display", "none");
-    d3.select("#scene5").style("display", "block");
+    const svg = createScene("#scene5", "Aggregated Insights");
+    createNavigationButtons("#scene5", showScene3, null);
 
     d3.csv("data/listings.csv").then(function(data) {
         // Calculate aggregated insights
@@ -229,34 +274,32 @@ function showScene5() {
             };
         });
 
-        const margin = {top: 10, right: 30, bottom: 30, left: 60};
+        const margin = { top: 10, right: 30, bottom: 30, left: 60 };
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
-
-        const svg = d3.select("#scene5").append("svg")
-            .attr("width", innerWidth + margin.left + margin.right)
-            .attr("height", innerHeight + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
 
         const x = d3.scaleBand()
             .domain(insights.map(d => d.neighbourhood))
             .range([0, innerWidth])
             .padding(0.1);
-        svg.append("g")
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(insights, d => d.avgPrice)])
+            .range([innerHeight, 0]);
+
+        const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        g.append("g")
             .attr("transform", `translate(0,${innerHeight})`)
             .call(d3.axisBottom(x))
             .selectAll("text")
             .attr("transform", "rotate(-45)")
             .style("text-anchor", "end");
 
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(insights, d => d.avgPrice)])
-            .range([innerHeight, 0]);
-        svg.append("g")
+        g.append("g")
             .call(d3.axisLeft(y));
 
-        svg.selectAll(".bar")
+        g.selectAll(".bar")
             .data(insights)
             .enter()
             .append("rect")
@@ -268,7 +311,7 @@ function showScene5() {
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-                tooltip.html(`Neighbourhood: ${d.neighbourhood}<br>Avg Price: $${d.avgPrice.toFixed(2)}`)
+                tooltip.html(`Neighbourhood: ${d.neighbourhood}<br>Avg Price: $${d.avgPrice.toFixed(2)}<br>Avg Reviews/Month: ${d.avgReviewsPerMonth.toFixed(2)}`)
                     .style("left", (event.pageX + 5) + "px")
                     .style("top", (event.pageY - 28) + "px")
                     .style("opacity", 0.9);
@@ -276,12 +319,26 @@ function showScene5() {
             .on("mouseout", function() {
                 d3.select(".tooltip").remove();
             });
+
+        // Add annotations
+        const topPriceNeighborhood = insights.reduce((prev, current) => (prev.avgPrice > current.avgPrice) ? prev : current);
+        const topReviewsNeighborhood = insights.reduce((prev, current) => (prev.avgReviewsPerMonth > current.avgReviewsPerMonth) ? prev : current);
+
+        const annotations = [
+            {
+                x: x(topPriceNeighborhood.neighbourhood) + x.bandwidth() / 2,
+                y: y(topPriceNeighborhood.avgPrice),
+                text: `Highest Avg Price: $${topPriceNeighborhood.avgPrice.toFixed(2)}`
+            },
+            {
+                x: x(topReviewsNeighborhood.neighbourhood) + x.bandwidth() / 2,
+                y: y(topReviewsNeighborhood.avgReviewsPerMonth),
+                text: `Highest Avg Reviews: ${topReviewsNeighborhood.avgReviewsPerMonth.toFixed(2)}`
+            }
+        ];
+        addAnnotations(g, annotations);
     });
 }
-
-// Global variables to keep track of the current neighborhood and listing
-let currentNeighborhood = "";
-let currentListing = {};
 
 // Start with Scene 1
 showScene1();
