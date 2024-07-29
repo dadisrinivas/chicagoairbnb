@@ -268,7 +268,7 @@ function showScene5() {
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-                tooltip.html(`Neighbourhood: ${d.neighbourhood}<br>Avg Price: $${d.avgPrice.toFixed(2)}<br>Avg Reviews/Month: ${d.avgReviewsPerMonth.toFixed(2)}`)
+                tooltip.html(`Neighbourhood: ${d.neighbourhood}<br>Avg Price: $${d.avgPrice.toFixed(2)}`)
                     .style("left", (event.pageX + 5) + "px")
                     .style("top", (event.pageY - 28) + "px")
                     .style("opacity", 0.9);
