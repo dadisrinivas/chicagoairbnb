@@ -174,11 +174,19 @@ function showScene3(listing) {
     d3.csv("data/reviews.csv").then(function(data) {
         const filteredData = data.filter(d => d.listing_id === listing.id);
 
+        // Calculate average rating by date
+        const dateParser = d3.timeParse("%Y-%m-%d");
+        const avgRatingByDate = d3.rollups(
+            filteredData,
+            v => d3.mean(v, d => d.rating),
+            d => dateParser(d.date)
+        );
+
         const x = d3.scaleTime()
-            .domain(d3.extent(filteredData, d => new Date(d.date)))
+            .domain(d3.extent(avgRatingByDate, d => d[0]))
             .range([0, width]);
         const y = d3.scaleLinear()
-            .domain([0, d3.max(filteredData, d => d.rating)]) // Assuming rating scale is 0-5
+            .domain([0, 5]) // Assuming rating scale is 0-5
             .range([height, 0]);
 
         svg.append("g")
@@ -189,29 +197,29 @@ function showScene3(listing) {
             .call(d3.axisLeft(y));
 
         const line = d3.line()
-            .x(d => x(new Date(d.date)))
-            .y(d => y(d.rating))
+            .x(d => x(d[0]))
+            .y(d => y(d[1]))
             .curve(d3.curveCardinal);
 
         svg.append("path")
-            .datum(filteredData)
+            .datum(avgRatingByDate)
             .attr("fill", "none")
             .attr("stroke", "steelblue")
             .attr("stroke-width", 2)
             .attr("d", line);
 
         svg.selectAll(".dot")
-            .data(filteredData)
+            .data(avgRatingByDate)
             .enter()
             .append("circle")
             .attr("class", "dot")
-            .attr("cx", d => x(new Date(d.date)))
-            .attr("cy", d => y(d.rating))
+            .attr("cx", d => x(d[0]))
+            .attr("cy", d => y(d[1]))
             .attr("r", 5)
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-                tooltip.html(`Date: ${d.date}<br>Rating: ${d.rating}`)
+                tooltip.html(`Date: ${d3.timeFormat("%Y-%m-%d")(d[0])}<br>Rating: ${d[1].toFixed(2)}`)
                     .style("left", (event.pageX + 5) + "px")
                     .style("top", (event.pageY - 28) + "px")
                     .style("opacity", 0.9);
