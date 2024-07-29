@@ -90,7 +90,7 @@ function showScene1() {
     });
 }
 
-// Scene 2: Listings Details in Selected Neighborhood
+// Scene 2: Listings Details in Selected Neighborhood (Scatter Plot)
 function showScene2(neighbourhood) {
     console.log("Showing Scene 2 for neighborhood:", neighbourhood);
     d3.select("#scene1").style("display", "none");
@@ -103,33 +103,27 @@ function showScene2(neighbourhood) {
     d3.csv("data/listings.csv").then(function(data) {
         const filteredData = data.filter(d => d.neighbourhood === neighbourhood);
 
-        const x = d3.scaleBand()
-            .domain(filteredData.map(d => d.name))
-            .range([0, width])
-            .padding(0.1);
-        const y = d3.scaleLinear()
+        const x = d3.scaleLinear()
             .domain([0, d3.max(filteredData, d => +d.price)])
+            .range([0, width]);
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(filteredData, d => +d.reviews_per_month)])
             .range([height, 0]);
 
         svg.append("g")
             .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(x))
-            .selectAll("text")
-            .attr("transform", "rotate(-45)")
-            .style("text-anchor", "end");
+            .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("$.0f")));
 
         svg.append("g")
             .call(d3.axisLeft(y));
 
-        svg.selectAll(".bar")
+        svg.selectAll("circle")
             .data(filteredData)
             .enter()
-            .append("rect")
-            .attr("class", "bar")
-            .attr("x", d => x(d.name))
-            .attr("y", d => y(d.price))
-            .attr("width", x.bandwidth())
-            .attr("height", d => height - y(d.price))
+            .append("circle")
+            .attr("cx", d => x(d.price))
+            .attr("cy", d => y(d.reviews_per_month))
+            .attr("r", 5)
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
@@ -146,6 +140,20 @@ function showScene2(neighbourhood) {
                 console.log("Listing clicked:", currentListing);
                 showScene3(d);
             });
+
+        // Add labels
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height + margin.bottom - 5)
+            .attr("text-anchor", "middle")
+            .text("Price");
+
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", -margin.left + 15)
+            .attr("text-anchor", "middle")
+            .text("Reviews per Month");
     }).catch(error => {
         console.error("Error loading listings data:", error);
     });
@@ -211,7 +219,7 @@ function showScene3(listing) {
     });
 }
 
-// Scene 5: Aggregated Insights
+// Scene 5: Aggregated Insights (Curved Line Graph)
 function showScene5() {
     console.log("Showing Scene 5: Aggregated Insights");
     d3.select("#scene1").style("display", "none");
@@ -253,15 +261,26 @@ function showScene5() {
         svg.append("g")
             .call(d3.axisLeft(y));
 
-        svg.selectAll(".bar")
+        const line = d3.line()
+            .x(d => x(d.neighbourhood) + x.bandwidth() / 2)
+            .y(d => y(d.avgPrice))
+            .curve(d3.curveCardinal);
+
+        svg.append("path")
+            .datum(insights)
+            .attr("fill", "none")
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", 2)
+            .attr("d", line);
+
+        svg.selectAll(".dot")
             .data(insights)
             .enter()
-            .append("rect")
-            .attr("class", "bar")
-            .attr("x", d => x(d.neighbourhood))
-            .attr("y", d => y(d.avgPrice))
-            .attr("width", x.bandwidth())
-            .attr("height", d => height - y(d.avgPrice))
+            .append("circle")
+            .attr("class", "dot")
+            .attr("cx", d => x(d.neighbourhood) + x.bandwidth() / 2)
+            .attr("cy", d => y(d.avgPrice))
+            .attr("r", 5)
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
@@ -273,6 +292,20 @@ function showScene5() {
             .on("mouseout", function() {
                 d3.select(".tooltip").remove();
             });
+
+        // Add labels
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height + margin.bottom - 5)
+            .attr("text-anchor", "middle")
+            .text("Neighbourhood");
+
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", -margin.left + 15)
+            .attr("text-anchor", "middle")
+            .text("Avg Price");
     }).catch(error => {
         console.error("Error loading listings data:", error);
     });
