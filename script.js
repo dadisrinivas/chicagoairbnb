@@ -160,7 +160,7 @@ function showScene2(neighbourhood) {
     });
 }
 
-// Scene 3: Listing Reviews Analysis
+// Scene 3: Listing Reviews Analysis (Curved Line Graph)
 function showScene3(listing) {
     console.log("Showing Scene 3 for listing:", listing);
     d3.select("#scene1").style("display", "none");
@@ -188,24 +188,27 @@ function showScene3(listing) {
         svg.append("g")
             .call(d3.axisLeft(y));
 
-        const area = d3.area()
+        const line = d3.line()
             .x(d => x(new Date(d.date)))
-            .y0(height)
-            .y1(d => y(d.rating));
+            .y(d => y(d.rating))
+            .curve(d3.curveCardinal);
 
         svg.append("path")
             .datum(filteredData)
-            .attr("fill", "steelblue")
-            .attr("d", area);
+            .attr("fill", "none")
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", 2)
+            .attr("d", line);
 
-        svg.selectAll("circle")
+        svg.selectAll(".dot")
             .data(filteredData)
             .enter()
             .append("circle")
+            .attr("class", "dot")
             .attr("cx", d => x(new Date(d.date)))
             .attr("cy", d => y(d.rating))
             .attr("r", 5)
-            .attr("fill", "green")
+            .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
                 tooltip.html(`Date: ${d.date}<br>Rating: ${d.rating}`)
@@ -216,6 +219,20 @@ function showScene3(listing) {
             .on("mouseout", function() {
                 d3.select(".tooltip").remove();
             });
+
+        // Add labels
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height + margin.bottom - 5)
+            .attr("text-anchor", "middle")
+            .text("Date");
+
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", -margin.left + 15)
+            .attr("text-anchor", "middle")
+            .text("Rating");
     }).catch(error => {
         console.error("Error loading reviews data:", error);
     });
