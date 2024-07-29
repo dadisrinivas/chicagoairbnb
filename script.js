@@ -148,19 +148,19 @@ function showScene2(neighbourhood) {
         // Add annotations
         const annotation = svg.append("g")
             .attr("class", "annotation")
-            .attr("transform", `translate(${x(d3.max(filteredData, d => +d.price))},${y(5)})`);
+            .attr("transform", `translate(${x(d3.max(filteredData, d => +d.price)) - 10},${y(5) - 10})`);
 
         annotation.append("text")
-            .attr("x", -10)
-            .attr("y", -10)
+            .attr("x", 0)
+            .attr("y", 0)
             .attr("text-anchor", "end")
             .text("Max Price");
 
         annotation.append("line")
             .attr("x1", 0)
             .attr("y1", 0)
-            .attr("x2", 10)
-            .attr("y2", 10)
+            .attr("x2", 20)
+            .attr("y2", 20)
             .attr("stroke", "black");
 
         // Add labels
@@ -248,21 +248,22 @@ function showScene5() {
             });
 
         // Add annotations
+        const highestAvgPrice = insights[0];
         const annotation = svg.append("g")
             .attr("class", "annotation")
-            .attr("transform", `translate(${x(insights[0].neighbourhood) + x.bandwidth() / 2},${y(insights[0].avgPrice)})`);
+            .attr("transform", `translate(${x(highestAvgPrice.neighbourhood) + x.bandwidth() / 2},${y(highestAvgPrice.avgPrice) - 20})`);
 
         annotation.append("text")
-            .attr("x", -10)
-            .attr("y", -10)
-            .attr("text-anchor", "end")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("text-anchor", "middle")
             .text("Highest Avg Price");
 
         annotation.append("line")
             .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 10)
-            .attr("y2", 10)
+            .attr("y1", 10)
+            .attr("x2", 0)
+            .attr("y2", 30)
             .attr("stroke", "black");
 
         // Add labels
@@ -277,7 +278,7 @@ function showScene5() {
             .attr("x", -height / 2)
             .attr("y", -margin.left + 15)
             .attr("text-anchor", "middle")
-            .text("Avg Price($$)");
+            .text("Avg Price ($)");
 
         // Move back button down a little
         d3.select("#scene5 .button-container")
