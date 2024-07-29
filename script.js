@@ -47,27 +47,15 @@ function createNavigationButtons(sceneId, backAction, nextAction) {
     }
 }
 
-// Annotations template for visual consistency
-function addAnnotations(svg, annotations) {
-    annotations.forEach(ann => {
-        svg.append("text")
-            .attr("x", ann.x)
-            .attr("y", ann.y)
-            .attr("dy", ann.dy || -10)
-            .attr("dx", ann.dx || -10)
-            .attr("class", "annotation")
-            .text(ann.text);
-    });
-}
-
 // Scene 1: Overview of Listings by Neighborhood
 function showScene1() {
+    console.log("Showing Scene 1");
+    d3.select("#scene1").style("display", "block");
+    d3.select("#scene2").style("display", "none");
+    d3.select("#scene3").style("display", "none");
+    d3.select("#scene5").style("display", "none");
+
     const svg = createScene("#scene1", "Overview of Listings by Neighborhood");
-    createNavigationButtons("#scene1", null, () => {
-        if (currentNeighborhood) {
-            showScene2(currentNeighborhood);
-        }
-    });
 
     d3.json("data/neighbourhoods.geojson").then(function(data) {
         const projection = d3.geoMercator().fitSize([width, height], data);
@@ -94,32 +82,23 @@ function showScene1() {
             })
             .on("click", function(event, d) {
                 currentNeighborhood = d.properties.neighbourhood;
-                console.log("Neighborhood clicked:", currentNeighborhood); // Debugging
+                console.log("Neighborhood clicked:", currentNeighborhood);
                 showScene2(currentNeighborhood);
             });
-
-        // Add annotations
-        const topNeighborhoods = data.features.slice(0, 3);
-        const annotations = topNeighborhoods.map((d, i) => ({
-            x: projection(d.geometry.coordinates[0][0][0])[0],
-            y: projection(d.geometry.coordinates[0][0][0])[1],
-            text: `Top ${i + 1}: ${d.properties.neighbourhood}`
-        }));
-        addAnnotations(svg, annotations);
     }).catch(error => {
-        console.error("Error loading neighborhood data:", error); // Error handling
+        console.error("Error loading neighborhood data:", error);
     });
 }
 
 // Scene 2: Listings Details in Selected Neighborhood
 function showScene2(neighbourhood) {
-    console.log("Showing Scene 2 for neighborhood:", neighbourhood); // Debugging
+    console.log("Showing Scene 2 for neighborhood:", neighbourhood);
+    d3.select("#scene1").style("display", "none");
+    d3.select("#scene2").style("display", "block");
+    d3.select("#scene3").style("display", "none");
+    d3.select("#scene5").style("display", "none");
+
     const svg = createScene("#scene2", `Listings in ${neighbourhood}`);
-    createNavigationButtons("#scene2", showScene1, () => {
-        if (currentListing) {
-            showScene3(currentListing);
-        }
-    });
 
     d3.csv("data/listings.csv").then(function(data) {
         const filteredData = data.filter(d => d.neighbourhood === neighbourhood);
@@ -164,37 +143,23 @@ function showScene2(neighbourhood) {
             })
             .on("click", function(event, d) {
                 currentListing = d;
-                console.log("Listing clicked:", currentListing); // Debugging
+                console.log("Listing clicked:", currentListing);
                 showScene3(d);
             });
-
-        // Add annotations
-        const maxPriceListing = filteredData.reduce((prev, current) => (prev.price > current.price) ? prev : current);
-        const maxReviewsListing = filteredData.reduce((prev, current) => (prev.reviews_per_month > current.reviews_per_month) ? prev : current);
-
-        const annotations = [
-            {
-                x: x(maxPriceListing.name),
-                y: y(maxPriceListing.price),
-                text: `Max Price: $${maxPriceListing.price}`
-            },
-            {
-                x: x(maxReviewsListing.name),
-                y: y(maxReviewsListing.price),
-                text: `Max Reviews: ${maxReviewsListing.reviews_per_month}`
-            }
-        ];
-        addAnnotations(svg, annotations);
     }).catch(error => {
-        console.error("Error loading listings data:", error); // Error handling
+        console.error("Error loading listings data:", error);
     });
 }
 
 // Scene 3: Listing Reviews Analysis
 function showScene3(listing) {
-    console.log("Showing Scene 3 for listing:", listing); // Debugging
+    console.log("Showing Scene 3 for listing:", listing);
+    d3.select("#scene1").style("display", "none");
+    d3.select("#scene2").style("display", "none");
+    d3.select("#scene3").style("display", "block");
+    d3.select("#scene5").style("display", "none");
+
     const svg = createScene("#scene3", `Reviews for ${listing.name}`);
-    createNavigationButtons("#scene3", () => showScene2(currentNeighborhood), showScene5);
 
     d3.csv("data/reviews.csv").then(function(data) {
         const filteredData = data.filter(d => d.listing_id === listing.id);
@@ -241,34 +206,20 @@ function showScene3(listing) {
             .on("mouseout", function() {
                 d3.select(".tooltip").remove();
             });
-
-        // Add annotations
-        const maxRating = d3.max(filteredData, d => d.rating);
-        const minRating = d3.min(filteredData, d => d.rating);
-
-        const annotations = [
-            {
-                x: x(new Date(filteredData.find(d => d.rating === maxRating).date)),
-                y: y(maxRating),
-                text: `Max Rating: ${maxRating}`
-            },
-            {
-                x: x(new Date(filteredData.find(d => d.rating === minRating).date)),
-                y: y(minRating),
-                text: `Min Rating: ${minRating}`
-            }
-        ];
-        addAnnotations(svg, annotations);
     }).catch(error => {
-        console.error("Error loading reviews data:", error); // Error handling
+        console.error("Error loading reviews data:", error);
     });
 }
 
 // Scene 5: Aggregated Insights
 function showScene5() {
-    console.log("Showing Scene 5: Aggregated Insights"); // Debugging
+    console.log("Showing Scene 5: Aggregated Insights");
+    d3.select("#scene1").style("display", "none");
+    d3.select("#scene2").style("display", "none");
+    d3.select("#scene3").style("display", "none");
+    d3.select("#scene5").style("display", "block");
+
     const svg = createScene("#scene5", "Aggregated Insights");
-    createNavigationButtons("#scene5", showScene3, null);
 
     d3.csv("data/listings.csv").then(function(data) {
         // Calculate aggregated insights
@@ -322,26 +273,8 @@ function showScene5() {
             .on("mouseout", function() {
                 d3.select(".tooltip").remove();
             });
-
-        // Add annotations
-        const topPriceNeighborhood = insights.reduce((prev, current) => (prev.avgPrice > current.avgPrice) ? prev : current);
-        const topReviewsNeighborhood = insights.reduce((prev, current) => (prev.avgReviewsPerMonth > current.avgReviewsPerMonth) ? prev : current);
-
-        const annotations = [
-            {
-                x: x(topPriceNeighborhood.neighbourhood) + x.bandwidth() / 2,
-                y: y(topPriceNeighborhood.avgPrice),
-                text: `Highest Avg Price: $${topPriceNeighborhood.avgPrice.toFixed(2)}`
-            },
-            {
-                x: x(topReviewsNeighborhood.neighbourhood) + x.bandwidth() / 2,
-                y: y(topReviewsNeighborhood.avgReviewsPerMonth),
-                text: `Highest Avg Reviews: ${topReviewsNeighborhood.avgReviewsPerMonth.toFixed(2)}`
-            }
-        ];
-        addAnnotations(svg, annotations);
     }).catch(error => {
-        console.error("Error loading listings data:", error); // Error handling
+        console.error("Error loading listings data:", error);
     });
 }
 
