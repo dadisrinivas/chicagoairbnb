@@ -108,7 +108,7 @@ function showScene2(neighbourhood) {
             .domain([0, d3.max(filteredData, d => +d.price)])
             .range([0, width]);
         const y = d3.scaleLinear()
-            .domain([1, 5]) // Average review scale from 1 to 5
+            .domain([0, 5]) // Average review scale from 0 to 5
             .range([height, 0]);
 
         svg.append("g")
@@ -160,7 +160,7 @@ function showScene2(neighbourhood) {
     });
 }
 
-// Scene 3: Listing Reviews Analysis (Curved Line Graph)
+// Scene 3: Listing Reviews Analysis (Bar Chart of Reviews per Month)
 function showScene3(listing) {
     console.log("Showing Scene 3 for listing:", listing);
     d3.select("#scene1").style("display", "none");
@@ -168,7 +168,7 @@ function showScene3(listing) {
     d3.select("#scene3").style("display", "block");
     d3.select("#scene5").style("display", "none");
 
-    const svg = createScene("#scene3", `Reviews for ${listing.name}`);
+    const svg = createScene("#scene3", `Review Activity for ${listing.name}`);
     createNavigationButtons("#scene3", () => showScene2(currentNeighborhood), showScene5);
 
     d3.csv("data/reviews.csv").then(function(data) {
@@ -183,52 +183,45 @@ function showScene3(listing) {
             return;
         }
 
-        // Calculate average rating by date
+        // Group data by month
         const dateParser = d3.timeParse("%Y-%m-%d");
-        const avgRatingByDate = d3.rollups(
+        const reviewsByMonth = d3.rollups(
             filteredData,
-            v => d3.mean(v, d => +d.rating),
-            d => dateParser(d.date)
+            v => v.length,
+            d => d3.timeMonth(dateParser(d.date))
         );
 
-        const x = d3.scaleTime()
-            .domain(d3.extent(avgRatingByDate, d => d[0]))
-            .range([0, width]);
+        const x = d3.scaleBand()
+            .domain(reviewsByMonth.map(d => d[0]))
+            .range([0, width])
+            .padding(0.1);
         const y = d3.scaleLinear()
-            .domain([0, 5]) // Assuming rating scale is 0-5
+            .domain([0, d3.max(reviewsByMonth, d => d[1])])
             .range([height, 0]);
 
         svg.append("g")
             .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(x));
+            .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%b %Y")).ticks(d3.timeMonth.every(1)))
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end");
 
         svg.append("g")
             .call(d3.axisLeft(y));
 
-        const line = d3.line()
-            .x(d => x(d[0]))
-            .y(d => y(d[1]))
-            .curve(d3.curveCardinal);
-
-        svg.append("path")
-            .datum(avgRatingByDate)
-            .attr("fill", "none")
-            .attr("stroke", "steelblue")
-            .attr("stroke-width", 2)
-            .attr("d", line);
-
-        svg.selectAll(".dot")
-            .data(avgRatingByDate)
+        svg.selectAll(".bar")
+            .data(reviewsByMonth)
             .enter()
-            .append("circle")
-            .attr("class", "dot")
-            .attr("cx", d => x(d[0]))
-            .attr("cy", d => y(d[1]))
-            .attr("r", 5)
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", d => x(d[0]))
+            .attr("y", d => y(d[1]))
+            .attr("width", x.bandwidth())
+            .attr("height", d => height - y(d[1]))
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-                tooltip.html(`Date: ${d3.timeFormat("%Y-%m-%d")(d[0])}<br>Rating: ${d[1].toFixed(2)}`)
+                tooltip.html(`Month: ${d3.timeFormat("%b %Y")(d[0])}<br>Reviews: ${d[1]}`)
                     .style("left", (event.pageX + 5) + "px")
                     .style("top", (event.pageY - 28) + "px")
                     .style("opacity", 0.9);
@@ -240,16 +233,16 @@ function showScene3(listing) {
         // Add labels
         svg.append("text")
             .attr("x", width / 2)
-            .attr("y", height + margin.bottom - 5)
+            .attr("y", height + margin.bottom - 35)
             .attr("text-anchor", "middle")
-            .text("Date");
+            .text("Month");
 
         svg.append("text")
             .attr("transform", "rotate(-90)")
             .attr("x", -height / 2)
             .attr("y", -margin.left + 15)
             .attr("text-anchor", "middle")
-            .text("Rating");
+            .text("Number of Reviews");
     }).catch(error => {
         console.error("Error loading reviews data:", error);
     });
@@ -325,7 +318,7 @@ function showScene5() {
         // Add labels
         svg.append("text")
             .attr("x", width / 2)
-            .attr("y", height + margin.bottom - 5)
+            .attr("y", height + margin.bottom - 35)
             .attr("text-anchor", "middle")
             .text("Neighbourhood");
 
@@ -335,6 +328,10 @@ function showScene5() {
             .attr("y", -margin.left + 15)
             .attr("text-anchor", "middle")
             .text("Avg Price");
+
+        // Move back button down a little
+        d3.select("#scene5 .button-container")
+            .style("margin-top", "20px");
     }).catch(error => {
         console.error("Error loading listings data:", error);
     });
