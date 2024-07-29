@@ -146,23 +146,15 @@ function showScene2(neighbourhood) {
             });
 
         // Add annotations
-        const maxPrice = d3.max(filteredData, d => +d.price);
         const annotation = svg.append("g")
             .attr("class", "annotation")
-            .attr("transform", `translate(${x(maxPrice)},${y(4.5)})`);
+            .attr("transform", `translate(${width / 2},${-margin.top + 40})`);
 
         annotation.append("text")
-            .attr("x", -10)
-            .attr("y", -10)
-            .attr("text-anchor", "end")
-            .text("Max Price");
-
-        annotation.append("line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 20)
-            .attr("y2", 20)
-            .attr("stroke", "black");
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("text-anchor", "middle")
+            .text("This scatter plot shows the price vs. average review of listings");
 
         // Add labels
         svg.append("text")
@@ -249,23 +241,15 @@ function showScene5() {
             });
 
         // Add annotations
-        const highestAvgPrice = insights[0];
         const annotation = svg.append("g")
             .attr("class", "annotation")
-            .attr("transform", `translate(${x(highestAvgPrice.neighbourhood) + x.bandwidth() / 2},${y(highestAvgPrice.avgPrice) - 10})`);
+            .attr("transform", `translate(${width / 2},${-margin.top + 40})`);
 
         annotation.append("text")
             .attr("x", 0)
-            .attr("y", -10)
+            .attr("y", 0)
             .attr("text-anchor", "middle")
-            .text("Highest Avg Price");
-
-        annotation.append("line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 0)
-            .attr("y2", 20)
-            .attr("stroke", "black");
+            .text("This bar chart shows the average price of listings by neighborhood");
 
         // Add labels
         svg.append("text")
