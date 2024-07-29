@@ -96,7 +96,7 @@ function showScene2(neighbourhood) {
     d3.select("#scene5").style("display", "none");
 
     const svg = createScene("#scene2", `Listings in ${neighbourhood}`);
-    createNavigationButtons("#scene2", showScene1, showScene5);
+    createNavigationButtons("#scene2", () => showScene1(), showScene5);
 
     d3.csv("data/listings.csv").then(function(data) {
         const filteredData = data.filter(d => d.neighbourhood === neighbourhood);
@@ -160,7 +160,7 @@ function showScene5() {
     d3.select("#scene5").style("display", "block");
 
     const svg = createScene("#scene5", "Aggregated Insights");
-    createNavigationButtons("#scene5", showScene2, null);
+    createNavigationButtons("#scene5", () => showScene2(currentNeighborhood), null);
 
     d3.csv("data/listings.csv").then(function(data) {
         // Calculate aggregated insights
