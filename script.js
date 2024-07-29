@@ -108,7 +108,7 @@ function showScene2(neighbourhood) {
             .domain([0, d3.max(filteredData, d => +d.price)])
             .range([0, width]);
         const y = d3.scaleLinear()
-            .domain([0, d3.max(filteredData, d => +d.reviews_per_month)])
+            .domain([1, 5]) // Average review scale from 1 to 5
             .range([height, 0]);
 
         svg.append("g")
@@ -128,7 +128,7 @@ function showScene2(neighbourhood) {
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-                tooltip.html(`Name: ${d.name}<br>Price: $${d.price}<br>Reviews/Month: ${d.reviews_per_month}`)
+                tooltip.html(`Name: ${d.name}<br>Price: $${d.price}<br>Average Review: ${d.reviews_per_month}`)
                     .style("left", (event.pageX + 5) + "px")
                     .style("top", (event.pageY - 28) + "px")
                     .style("opacity", 0.9);
@@ -154,7 +154,7 @@ function showScene2(neighbourhood) {
             .attr("x", -height / 2)
             .attr("y", -margin.left + 15)
             .attr("text-anchor", "middle")
-            .text("Reviews per Month");
+            .text("Average Review");
     }).catch(error => {
         console.error("Error loading listings data:", error);
     });
@@ -287,7 +287,7 @@ function showScene5() {
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-                tooltip.html(`Neighbourhood: ${d.neighbourhood}<br>Avg Price: $${d.avgPrice.toFixed(2)}`)
+                tooltip.html(`Neighbourhood: ${d.neighbourhood}<br>Avg Price: $${d.avgPrice.toFixed(2)}<br>Avg Reviews/Month: ${d.avgReviewsPerMonth.toFixed(2)}`)
                     .style("left", (event.pageX + 5) + "px")
                     .style("top", (event.pageY - 28) + "px")
                     .style("opacity", 0.9);
