@@ -1,0 +1,19 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 100px;
+    height: auto;
+    padding: 5px;
+    background: lightsteelblue;
+    border: 1px solid gray;
+    border-radius: 5px;
+    pointer-events: none;
+}
+
+#scene1, #scene2, #scene3, #scene5 {
+    margin: 20px;
+}
