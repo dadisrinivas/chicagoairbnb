@@ -1,4 +1,3 @@
-// Set dimensions and margins for the visualizations
 const width = 960;
 const height = 600;
 const margin = { top: 10, right: 30, bottom: 80, left: 60 };
@@ -6,10 +5,10 @@ const margin = { top: 10, right: 30, bottom: 80, left: 60 };
 // Parameters: State variables to control the construction of scenes
 let currentNeighborhood = "";
 
-// Scene templates for visual consistency
+
 function createScene(id, title) {
     const container = d3.select(id);
-    container.html(""); // Clear the container
+    container.html(""); 
 
     container.append("div")
         .attr("class", "title")
@@ -265,7 +264,6 @@ function showScene5() {
             .attr("text-anchor", "middle")
             .text("Avg Price($)");
 
-        // Move back button down a little
         d3.select("#scene5 .button-container")
             .style("margin-top", "50px");
     }).catch(error => {
@@ -273,5 +271,6 @@ function showScene5() {
     });
 }
 
+/////////////////////////////// - STARTING POINT - ///////////////////////////////////////
 // Start with Scene 1
 showScene1();
