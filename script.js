@@ -160,7 +160,7 @@ function showScene2(neighbourhood) {
     });
 }
 
-// Scene 3: Listing Reviews Analysis (Bar Chart of Reviews per Month)
+// Scene 3: Listing Reviews Analysis (Line Chart of Reviews over Time)
 function showScene3(listing) {
     console.log("Showing Scene 3 for listing:", listing);
     d3.select("#scene1").style("display", "none");
@@ -183,7 +183,7 @@ function showScene3(listing) {
             return;
         }
 
-        // Group data by month
+        // Parse dates and group by month
         const dateParser = d3.timeParse("%Y-%m-%d");
         const reviewsByMonth = d3.rollups(
             filteredData,
@@ -191,10 +191,9 @@ function showScene3(listing) {
             d => d3.timeMonth(dateParser(d.date))
         );
 
-        const x = d3.scaleBand()
-            .domain(reviewsByMonth.map(d => d[0]))
-            .range([0, width])
-            .padding(0.1);
+        const x = d3.scaleTime()
+            .domain(d3.extent(reviewsByMonth, d => d[0]))
+            .range([0, width]);
         const y = d3.scaleLinear()
             .domain([0, d3.max(reviewsByMonth, d => d[1])])
             .range([height, 0]);
@@ -209,15 +208,26 @@ function showScene3(listing) {
         svg.append("g")
             .call(d3.axisLeft(y));
 
-        svg.selectAll(".bar")
+        const line = d3.line()
+            .x(d => x(d[0]))
+            .y(d => y(d[1]))
+            .curve(d3.curveMonotoneX);
+
+        svg.append("path")
+            .datum(reviewsByMonth)
+            .attr("fill", "none")
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", 2)
+            .attr("d", line);
+
+        svg.selectAll(".dot")
             .data(reviewsByMonth)
             .enter()
-            .append("rect")
-            .attr("class", "bar")
-            .attr("x", d => x(d[0]))
-            .attr("y", d => y(d[1]))
-            .attr("width", x.bandwidth())
-            .attr("height", d => height - y(d[1]))
+            .append("circle")
+            .attr("class", "dot")
+            .attr("cx", d => x(d[0]))
+            .attr("cy", d => y(d[1]))
+            .attr("r", 5)
             .attr("fill", "steelblue")
             .on("mouseover", function(event, d) {
                 const tooltip = d3.select("body").append("div").attr("class", "tooltip");

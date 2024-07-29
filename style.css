@@ -50,4 +50,5 @@ body {
     border: 1px solid gray;
     border-radius: 5px;
     pointer-events: none;
-   
+    font-size: 10px; /* Smaller font size */
+}
